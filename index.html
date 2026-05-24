@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lycéopolis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .house { transition: all 0.3s; }
+    .house:hover { transform: scale(1.08); }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen">
+
+<div id="app" class="max-w-6xl mx-auto p-4">
+
+  <!-- ====================== CONNEXION ====================== -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center">
+    <div class="bg-zinc-900 rounded-3xl p-8 w-full max-w-md">
+      <h1 class="text-4xl font-bold text-emerald-400 text-center mb-8">Lycéopolis</h1>
+      <div class="space-y-6">
+        <input id="pseudo" type="text" placeholder="Pseudo" class="w-full bg-zinc-800 rounded-2xl px-5 py-4 text-lg">
+        <input id="password" type="password" placeholder="Mot de passe" class="w-full bg-zinc-800 rounded-2xl px-5 py-4 text-lg">
+        <button onclick="login()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-semibold">Se connecter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================== MENU PRINCIPAL ====================== -->
+  <div id="main-menu" class="hidden min-h-screen">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold">Bienvenue, <span id="current-pseudo" class="text-emerald-400"></span></h1>
+      <button onclick="logout()" class="text-zinc-400 hover:text-white">Déconnexion</button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <button onclick="showCreateParty()" class="bg-gradient-to-br from-emerald-600 to-teal-600 p-8 rounded-3xl text-left hover:scale-105 transition">
+        <h2 class="text-2xl font-bold">Créer une partie</h2>
+      </button>
+      <button onclick="showAvailableParties()" class="bg-zinc-800 p-8 rounded-3xl text-left hover:bg-zinc-700 transition">
+        <h2 class="text-2xl font-bold">Rejoindre une partie</h2>
+      </button>
+    </div>
+  </div>
+
+  <!-- ====================== LISTE DES PARTIES ====================== -->
+  <div id="parties-list-screen" class="hidden p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold">Parties disponibles</h2>
+      <button onclick="backToMainMenu()" class="text-zinc-400 hover:text-white">← Retour</button>
+    </div>
+    <div id="available-parties" class="space-y-4"></div>
+  </div>
+
+  <!-- ====================== LOBBY ====================== -->
+  <div id="lobby-screen" class="hidden p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold">Partie • <span id="party-id"></span></h2>
+      <div id="player-count" class="text-emerald-400 font-semibold"></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <h3 class="font-bold mb-4">Joueurs connectés</h3>
+        <div id="players-in-lobby" class="grid grid-cols-2 gap-4"></div>
+      </div>
+
+      <div class="bg-zinc-900 rounded-3xl p-6">
+        <h3 class="text-xl font-bold mb-4">Choisis ton rôle</h3>
+        <div id="roles-list" class="grid grid-cols-1 gap-3"></div>
+        
+        <div id="confirm-role-section" class="hidden mt-6">
+          <p class="text-center mb-4">Rôle sélectionné : <span id="selected-role-name" class="font-bold text-emerald-400"></span></p>
+          <button onclick="confirmRole()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-bold">Confirmer mon rôle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================== JEU ====================== -->
+  <div id="game-screen" class="hidden p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <button onclick="toggleSidebar()" class="p-3 hover:bg-zinc-800 rounded-2xl transition">
+          <i class="fas fa-bars text-2xl"></i>
+        </button>
+        <h2 class="text-2xl font-bold">Fil d'actualités</h2>
+      </div>
+      <button onclick="showProfile()" class="bg-zinc-800 hover:bg-zinc-700 px-5 py-2 rounded-2xl text-sm flex items-center gap-2">
+        <i class="fas fa-home"></i> Ma Maison
+      </button>
+    </div>
+
+    <div id="my-role-display" class="mb-4 text-emerald-400 font-semibold"></div>
+
+    <div class="sticky top-4 z-50 bg-zinc-950 pt-2 pb-4">
+      <div class="bg-zinc-900 rounded-3xl p-5 border border-zinc-800">
+        <textarea id="post-content" rows="3" class="w-full bg-zinc-800 rounded-2xl p-4 text-white placeholder-zinc-500 focus:outline-none resize-none" placeholder="Que voulez-vous publier aujourd'hui ?"></textarea>
+        <div class="flex justify-end mt-4">
+          <button onclick="publishPost()" class="bg-emerald-600 hover:bg-emerald-500 px-8 py-3 rounded-2xl font-semibold">Publier</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="feed" class="space-y-6 pb-20"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-zinc-900 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-hidden">
+    <div class="p-5">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="font-bold text-lg flex items-center gap-2">
+          <i class="fas fa-users"></i> Joueurs (<span id="sidebar-count">0</span>)
+        </h3>
+        <button onclick="toggleSidebar()" class="p-2 hover:bg-zinc-800 rounded-xl">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <div id="sidebar-players" class="space-y-3 max-h-[calc(100vh-120px)] overflow-y-auto pr-2"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DONNÉES ====================
+const usersDB = {
+  "momo": "momo78",
+  "toma": "poil"
+};
+
+let currentUser = null;
+let currentParty = null;
+let playersInParty = [];
+let selectedRole = null;
+let posts = [];
+let sidebarOpen = false;
+let allParties = [];
+
+const roleSlots = {
+  "Candidat Honnête": { max: 8, current: 8, emoji: "🗳️" },
+  "Candidat Frauduleux": { max: 2, current: 2, emoji: "🕵️" },
+  "Journaliste": { max: 3, current: 3, emoji: "📰" },
+  "Ministre": { max: 4, current: 4, emoji: "🏛️" },
+  "Citoyen": { max: 999, current: 999, emoji: "👤" },
+  "Observateur": { max: 999, current: 999, emoji: "👀" }
+};
+
+const houseLevels = { 1: "🏠", 2: "🏡", 3: "🏰" };
+
+// ==================== CONNEXION ====================
+function login() {
+  let pseudoInput = document.getElementById("pseudo").value.trim().toLowerCase();
+  let password = document.getElementById("password").value.trim();
+
+  if (!pseudoInput || !password) return alert("Veuillez entrer un pseudo et un mot de passe");
+
+  if (usersDB[pseudoInput] && usersDB[pseudoInput] === password) {
+    currentUser = { pseudo: pseudoInput.charAt(0).toUpperCase() + pseudoInput.slice(1), houseLevel: 1 };
+    document.getElementById("login-screen").classList.add("hidden");
+    document.getElementById("main-menu").classList.remove("hidden");
+    document.getElementById("current-pseudo").textContent = currentUser.pseudo;
+  } else {
+    alert("Pseudo ou mot de passe incorrect !");
+  }
+}
+
+// ==================== PARTIES ====================
+function showCreateParty() {
+  const partyName = prompt("Nom de ta partie ?", "Partie de " + currentUser.pseudo);
+  if (!partyName) return;
+
+  currentParty = {
+    id: "PARTY-" + Math.floor(1000 + Math.random() * 9000),
+    name: partyName,
+    host: currentUser.pseudo,
+    players: []
+  };
+  allParties.push(currentParty);
+  joinParty();
+}
+
+function showAvailableParties() {
+  document.getElementById("main-menu").classList.add("hidden");
+  document.getElementById("parties-list-screen").classList.remove("hidden");
+  renderAvailableParties();
+}
+
+function renderAvailableParties() {
+  const container = document.getElementById("available-parties");
+  container.innerHTML = allParties.map(party => `
+    <div class="bg-zinc-900 rounded-3xl p-6 flex justify-between items-center">
+      <div>
+        <div class="font-bold">${party.name}</div>
+        <div class="text-zinc-400">Par ${party.host}</div>
+      </div>
+      <div>
+        <div class="text-emerald-400 font-semibold text-right">${party.players.length}/60</div>
+        <button onclick="joinExistingParty('${party.id}')" class="mt-3 bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded-2xl">Rejoindre</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function joinExistingParty(partyId) {
+  currentParty = allParties.find(p => p.id === partyId);
+  if (currentParty) joinParty();
+}
+
+function backToMainMenu() {
+  document.getElementById("parties-list-screen").classList.add("hidden");
+  document.getElementById("main-menu").classList.remove("hidden");
+}
+
+function joinParty() {
+  if (!currentParty.players) currentParty.players = [];
+  if (!currentParty.players.includes(currentUser.pseudo)) {
+    currentParty.players.push(currentUser.pseudo);
+  }
+
+  playersInParty = currentParty.players.map(p => ({ pseudo: p, role: null, houseLevel: 1 }));
+
+  document.getElementById("main-menu").classList.add("hidden");
+  document.getElementById("parties-list-screen").classList.add("hidden");
+  document.getElementById("lobby-screen").classList.remove("hidden");
+  document.getElementById("party-id").textContent = currentParty.name;
+
+  renderPlayersInLobby();
+  renderRoleSelection();
+  renderSidebarPlayers();
+}
+
+// ==================== LOBBY & ROLES ====================
+function renderPlayersInLobby() {
+  const container = document.getElementById("players-in-lobby");
+  container.innerHTML = playersInParty.map(p => `
+    <div class="bg-zinc-800 rounded-2xl p-4 house">
+      <div class="text-4xl mb-2">${houseLevels[p.houseLevel]}</div>
+      <div class="font-semibold">${p.pseudo}</div>
+      <div class="text-sm ${p.role ? 'text-emerald-400' : 'text-zinc-500'}">
+        ${p.role ? roleSlots[p.role].emoji + ' ' + p.role : "Rôle non choisi"}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRoleSelection() {
+  const container = document.getElementById("roles-list");
+  container.innerHTML = Object.keys(roleSlots).map(role => {
+    const slot = roleSlots[role];
+    const remaining = slot.max === 999 ? '∞' : slot.current;
+    return `
+      <button onclick="selectRole('${role}')" class="bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl text-left transition flex justify-between items-center w-full">
+        <div>
+          <span class="text-2xl">${slot.emoji}</span>
+          <span class="font-semibold ml-3">${role}</span>
+        </div>
+        <div class="text-xs text-zinc-400">${remaining}</div>
+      </button>
+    `;
+  }).join('');
+}
+
+function selectRole(roleName) {
+  const slot = roleSlots[roleName];
+  if (slot.current <= 0 && slot.max !== 999) {
+    return alert("Plus de places disponibles pour ce rôle !");
+  }
+  selectedRole = roleName;
+  document.getElementById("selected-role-name").textContent = roleName;
+  document.getElementById("confirm-role-section").classList.remove("hidden");
+}
+
+function confirmRole() {
+  if (!selectedRole) return;
+
+  const slot = roleSlots[selectedRole];
+  if (slot.current <= 0 && slot.max !== 999) return alert("Plus de places disponibles !");
+
+  if (slot.max !== 999) slot.current--;
+
+  const player = playersInParty.find(p => p.pseudo === currentUser.pseudo);
+  if (player) player.role = selectedRole;
+
+  renderPlayersInLobby();
+  renderSidebarPlayers();
+
+  document.getElementById("lobby-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.remove("hidden");
+  document.getElementById("my-role-display").innerHTML = `Rôle : <span class="text-emerald-400">${roleSlots[selectedRole].emoji} ${selectedRole}</span>`;
+}
+
+// ==================== SIDEBAR ====================
+function renderSidebarPlayers() {
+  const container = document.getElementById("sidebar-players");
+  container.innerHTML = playersInParty.map(p => `
+    <div class="bg-zinc-800 rounded-2xl p-3 flex gap-3 items-center">
+      <div class="text-3xl flex-shrink-0">${houseLevels[p.houseLevel]}</div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold truncate">${p.pseudo}</div>
+        <div class="text-xs ${p.role ? 'text-emerald-400' : 'text-zinc-500'} truncate">
+          ${p.role ? roleSlots[p.role].emoji + ' ' + p.role : "Rôle non choisi"}
+        </div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById("sidebar-count").textContent = playersInParty.length;
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  sidebarOpen = !sidebarOpen;
+  sidebar.classList.toggle("translate-x-full", !sidebarOpen);
+}
+
+// Feed
+function publishPost() {
+  const content = document.getElementById("post-content").value.trim();
+  if (!content) return alert("Le message ne peut pas être vide");
+
+  posts.unshift({
+    pseudo: currentUser.pseudo,
+    role: selectedRole,
+    content: content,
+    time: "Maintenant",
+    houseLevel: currentUser.houseLevel
+  });
+
+  renderFeed();
+  document.getElementById("post-content").value = '';
+}
+
+function renderFeed() {
+  const feed = document.getElementById("feed");
+  feed.innerHTML = posts.map(p => `
+    <div class="bg-zinc-900 rounded-3xl p-5 border border-zinc-800">
+      <div class="flex justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">${houseLevels[p.houseLevel]}</span>
+          <div>
+            <span class="font-bold">${p.pseudo}</span>
+            <span class="text-amber-400 text-sm ml-2">(${p.role})</span>
+          </div>
+        </div>
+        <span class="text-xs text-zinc-500">${p.time}</span>
+      </div>
+      <p class="text-zinc-100">${p.content}</p>
+    </div>
+  `).join('');
+}
+
+function showProfile() {
+  alert(`🏠 Maison de ${currentUser.pseudo}\nNiveau : ${currentUser.houseLevel} ${houseLevels[currentUser.houseLevel]}\nRôle : ${selectedRole || 'Non défini'}`);
+}
+
+function logout() {
+  location.reload();
+}
+</script>
+</body>
+        </html>
